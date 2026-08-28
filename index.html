@@ -668,7 +668,7 @@ function openModal(id){
         <p class="modal-sub">${escapeHtml(c.producers || 'Producer unknown')}</p>
       </div>
     </div>
-    <a class="modal-link" href="${c.url}" target="_blank" rel="noopener">View on cheese.com ↗</a>
+    <a class="modal-link" href="https://www.google.com/search?q=${encodeURIComponent(c.name + ' cheese' + (c.country[0] ? ' ' + c.country[0] : ''))}" target="_blank" rel="noopener">Search for it online ↗</a>
     <dl class="detail-grid">
       ${detailRows.map(([k,v])=>`
         <div class="detail-item"><dt>${k}</dt><dd>${escapeHtml(v)}</dd></div>
