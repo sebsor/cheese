@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B1815">
+<title>Affinage — Cheese Ledger</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cave:#1B1815;
+    --surface:#242019;
+    --surface-2:#2C271F;
+    --line:#3A332A;
+    --gold:#C89B3C;
+    --gold-dim:#8F7231;
+    --wax:#A63D2F;
+    --wax-bright:#C6503F;
+    --chalk:#EDE6D6;
+    --stone:#9C9284;
+    --stone-dim:#6C6459;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cave);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  a{color:var(--gold);}
+
+  /* subtle cave texture */
+  body{
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(200,155,60,0.06), transparent 40%),
+      radial-gradient(circle at 85% 92%, rgba(166,61,47,0.05), transparent 45%);
+    background-attachment:fixed;
+  }
+
+  header{
+    padding:28px 20px 18px;
+    max-width:1100px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold-dim);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(32px,6vw,48px);
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--stone);
+    font-size:14px;
+    margin:0;
+  }
+  .stats-line{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--stone-dim);
+    margin-top:10px;
+  }
+
+  .toolbar{
+    max-width:1100px;
+    margin:0 auto;
+    padding:0 20px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .search-row{
+    display:flex;
+    gap:8px;
+  }
+  input[type="search"]{
+    flex:1;
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+  }
+  input[type="search"]:focus{
+    outline:none;
+    border-color:var(--gold-dim);
+  }
+  .book-toggle{
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    padding:12px 16px;
+    border-radius:10px;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .book-toggle.active{
+    background:var(--wax);
+    border-color:var(--wax);
+    color:var(--chalk);
+  }
+  .filters{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  select{
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    padding:9px 12px;
+    border-radius:8px;
+    font-size:13px;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+  }
+  select:focus{outline:none;border-color:var(--gold-dim);}
+
+  main{
+    max-width:1100px;
+    margin:0 auto;
+    padding:8px 20px 20px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:12px;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    cursor:pointer;
+    transition:border-color .15s, transform .15s;
+    display:flex;
+    gap:12px;
+  }
+  .card:hover{
+    border-color:var(--gold-dim);
+    transform:translateY(-1px);
+  }
+  .seal{
+    flex-shrink:0;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:var(--surface-2);
+    border:1.5px solid var(--gold-dim);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:17px;
+    color:var(--gold);
+  }
+  .card-body{flex:1;min-width:0;}
+  .card-name{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:17px;
+    margin:0 0 4px;
+    line-height:1.2;
+    color:var(--chalk);
+  }
+  .card-meta{
+    font-size:12px;
+    color:var(--stone);
+    margin:0 0 8px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .tag-row{
+    display:flex;
+    gap:5px;
+    flex-wrap:wrap;
+  }
+  .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.03em;
+    padding:2px 7px;
+    border-radius:20px;
+    background:var(--surface-2);
+    color:var(--stone);
+    border:1px solid var(--line);
+  }
+  .mini-dial{
+    margin-top:9px;
+    display:flex;
+    gap:3px;
+  }
+  .mini-wedge{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+  }
+  .mini-wedge.filled{
+    background:var(--wax);
+    border-color:var(--wax);
+  }
+
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--stone);
+  }
+  .empty-state .seal{
+    margin:0 auto 16px;
+    width:60px;height:60px;font-size:22px;
+  }
+
+  /* Modal */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(10,9,7,0.75);
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    padding:20px;
+    overflow-y:auto;
+    z-index:100;
+    backdrop-filter:blur(2px);
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    max-width:560px;
+    width:100%;
+    margin-top:min(6vh,60px);
+    padding:26px;
+    position:relative;
+  }
+  .modal-close{
+    position:absolute;
+    top:18px;right:18px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--stone);
+    width:32px;height:32px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+  }
+  .modal-header{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    margin-bottom:6px;
+    padding-right:36px;
+  }
+  .modal .seal{width:56px;height:56px;font-size:22px;}
+  .modal-title{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:26px;
+    margin:0;
+    line-height:1.15;
+  }
+  .modal-sub{
+    color:var(--stone);
+    font-size:13px;
+    margin:4px 0 0;
+  }
+  .modal-tags{
+    margin:16px 0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .detail-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 18px;
+    margin:16px 0;
+    font-size:13px;
+  }
+  .detail-item dt{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--stone-dim);
+    margin:0 0 3px;
+  }
+  .detail-item dd{
+    margin:0;
+    color:var(--chalk);
+  }
+  .modal-link{
+    display:inline-block;
+    font-size:12px;
+    margin-top:2px;
+    color:var(--gold);
+    text-decoration:none;
+    border-bottom:1px solid var(--gold-dim);
+  }
+
+  .rating-section{
+    margin-top:22px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+  }
+  .rating-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--stone-dim);
+    margin:0 0 12px;
+  }
+  .dial-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-bottom:16px;
+  }
+  .dial{cursor:pointer;}
+  .dial-wedge{
+    fill:var(--surface-2);
+    stroke:var(--line);
+    stroke-width:1.5;
+    transition:fill .1s;
+  }
+  .dial-wedge.filled{
+    fill:var(--wax);
+    stroke:var(--wax-bright);
+  }
+  .dial-wedge:hover{
+    fill:var(--wax-bright);
+  }
+  .dial-center{
+    fill:var(--cave);
+    stroke:var(--gold-dim);
+    stroke-width:1.5;
+  }
+  .rating-readout{
+    font-family:'Fraunces',serif;
+    font-size:15px;
+    color:var(--chalk);
+  }
+  .rating-readout .n{color:var(--gold);font-weight:600;}
+  textarea{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    border-radius:10px;
+    padding:12px;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    resize:vertical;
+    min-height:80px;
+  }
+  textarea:focus{outline:none;border-color:var(--gold-dim);}
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:11px 18px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:var(--surface-2);
+    color:var(--chalk);
+    cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#1B1815;
+  }
+  .btn-ghost{
+    background:transparent;
+    color:var(--stone);
+  }
+  .save-flash{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--gold);
+    opacity:0;
+    transition:opacity .2s;
+    align-self:center;
+  }
+  .save-flash.show{opacity:1;}
+
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:var(--cave);}
+  ::-webkit-scrollbar-thumb{background:var(--surface-2);border-radius:6px;}
+
+  @media (max-width:480px){
+    .detail-grid{grid-template-columns:1fr;}
+    .search-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">The world's cheeses, kept</p>
+  <h1>Affinage</h1>
+  <p class="sub">Search, browse, and mark down what's worth aging for.</p>
+  <p class="stats-line" id="statsLine">Loading the cellar…</p>
+</header>
+
+<div class="toolbar">
+  <div class="search-row">
+    <input type="search" id="searchInput" placeholder="Search by name, producer, or family…" autocomplete="off">
+    <button class="book-toggle" id="bookToggle">📖 My Book</button>
+  </div>
+  <div class="filters">
+    <select id="milkFilter"><option value="">Any milk</option></select>
+    <select id="countryFilter"><option value="">Any country</option></select>
+    <select id="typeFilter"><option value="">Any type</option></select>
+    <select id="ratingFilter">
+      <option value="">Any rating</option>
+      <option value="rated">Rated only</option>
+      <option value="unrated">Unrated only</option>
+      <option value="5">★ 5</option>
+      <option value="4">★ 4+</option>
+      <option value="3">★ 3+</option>
+    </select>
+    <select id="sortSelect">
+      <option value="name">Sort: Name A–Z</option>
+      <option value="country">Sort: Country</option>
+      <option value="rating-desc">Sort: My rating (high→low)</option>
+      <option value="recent">Sort: Recently rated</option>
+    </select>
+  </div>
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="seal">∅</div>
+    <p>No cheeses match that combination. Try loosening a filter.</p>
+  </div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const RATINGS_KEY = 'affinage-ratings-v1';
+let CHEESES = [];
+let ratings = {};
+let currentId = null;
+let bookMode = false;
+
+// ---------- storage ----------
+function loadRatings(){
+  try{
+    ratings = JSON.parse(localStorage.getItem(RATINGS_KEY)) || {};
+  }catch(e){ ratings = {}; }
+}
+function saveRatings(){
+  localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings));
+}
+
+// ---------- init ----------
+async function init(){
+  loadRatings();
+  try{
+    const res = await fetch('cheeses.json');
+    CHEESES = await res.json();
+  }catch(e){
+    document.getElementById('statsLine').textContent = 'Could not load cheese data.';
+    return;
+  }
+  populateFilters();
+  render();
+  registerSW();
+}
+
+function populateFilters(){
+  const countries = new Set(), milks = new Set(), types = new Set();
+  CHEESES.forEach(c=>{
+    c.country.forEach(x=>countries.add(x));
+    c.milk.forEach(x=>milks.add(x));
+    c.type.forEach(x=>types.add(x));
+  });
+  fillSelect('countryFilter', [...countries].sort());
+  fillSelect('milkFilter', [...milks].sort());
+  fillSelect('typeFilter', [...types].sort());
+}
+function fillSelect(id, values){
+  const sel = document.getElementById(id);
+  values.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v[0].toUpperCase()+v.slice(1);
+    sel.appendChild(opt);
+  });
+}
+
+// ---------- filtering / sorting ----------
+function getFiltered(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const milk = document.getElementById('milkFilter').value;
+  const country = document.getElementById('countryFilter').value;
+  const type = document.getElementById('typeFilter').value;
+  const ratingF = document.getElementById('ratingFilter').value;
+  const sort = document.getElementById('sortSelect').value;
+
+  let list = CHEESES.filter(c=>{
+    if(bookMode && !ratings[c.id]) return false;
+    if(q){
+      const hay = (c.name+' '+(c.producers||'')+' '+(c.family||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    if(milk && !c.milk.includes(milk)) return false;
+    if(country && !c.country.includes(country)) return false;
+    if(type && !c.type.includes(type)) return false;
+    if(ratingF){
+      const r = ratings[c.id]?.rating || 0;
+      if(ratingF === 'rated' && r === 0) return false;
+      if(ratingF === 'unrated' && r !== 0) return false;
+      if(!isNaN(parseInt(ratingF)) && r < parseInt(ratingF)) return false;
+    }
+    return true;
+  });
+
+  if(sort === 'name'){
+    list.sort((a,b)=>a.name.localeCompare(b.name));
+  } else if(sort === 'country'){
+    list.sort((a,b)=>(a.country[0]||'zzz').localeCompare(b.country[0]||'zzz') || a.name.localeCompare(b.name));
+  } else if(sort === 'rating-desc'){
+    list.sort((a,b)=>((ratings[b.id]?.rating||0) - (ratings[a.id]?.rating||0)) || a.name.localeCompare(b.name));
+  } else if(sort === 'recent'){
+    list.sort((a,b)=>{
+      const ra = ratings[a.id]?.ratedAt || '';
+      const rb = ratings[b.id]?.ratedAt || '';
+      return rb.localeCompare(ra);
+    });
+  }
+  return list;
+}
+
+// ---------- render ----------
+function render(){
+  const list = getFiltered();
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('emptyState');
+  grid.innerHTML = '';
+
+  if(list.length === 0){
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    const frag = document.createDocumentFragment();
+    list.forEach(c=>frag.appendChild(cardEl(c)));
+    grid.appendChild(frag);
+  }
+
+  const ratedCount = Object.keys(ratings).length;
+  document.getElementById('statsLine').textContent =
+    `${CHEESES.length.toLocaleString()} cheeses in the cellar · ${ratedCount} rated · showing ${list.length.toLocaleString()}`;
+}
+
+function cardEl(c){
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.onclick = ()=>openModal(c.id);
+
+  const seal = document.createElement('div');
+  seal.className = 'seal';
+  seal.textContent = c.name[0].toUpperCase();
+
+  const body = document.createElement('div');
+  body.className = 'card-body';
+
+  const name = document.createElement('p');
+  name.className = 'card-name';
+  name.textContent = c.name;
+
+  const meta = document.createElement('p');
+  meta.className = 'card-meta';
+  meta.textContent = [c.country[0], c.family].filter(Boolean).join(' · ') || '—';
+
+  const tagRow = document.createElement('div');
+  tagRow.className = 'tag-row';
+  [...c.milk.slice(0,1), ...c.type.slice(0,1)].forEach(t=>{
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = t;
+    tagRow.appendChild(tag);
+  });
+
+  body.appendChild(name);
+  body.appendChild(meta);
+  body.appendChild(tagRow);
+
+  const r = ratings[c.id]?.rating;
+  if(r){
+    const dial = document.createElement('div');
+    dial.className = 'mini-dial';
+    for(let i=1;i<=5;i++){
+      const w = document.createElement('div');
+      w.className = 'mini-wedge' + (i<=r ? ' filled' : '');
+      dial.appendChild(w);
+    }
+    body.appendChild(dial);
+  }
+
+  div.appendChild(seal);
+  div.appendChild(body);
+  return div;
+}
+
+// ---------- modal ----------
+function openModal(id){
+  currentId = id;
+  const c = CHEESES.find(x=>x.id===id);
+  const r = ratings[id] || {rating:0, notes:''};
+  const modal = document.getElementById('modal');
+
+  const detailRows = [
+    ['Milk', c.milk.join(', ') || '—'],
+    ['Country', c.country.join(', ') || '—'],
+    ['Region', c.region || '—'],
+    ['Family', c.family || '—'],
+    ['Type', c.type.join(', ') || '—'],
+    ['Texture', c.texture.join(', ') || '—'],
+    ['Rind', c.rind || '—'],
+    ['Color', c.color || '—'],
+    ['Flavor', c.flavor.join(', ') || '—'],
+    ['Aroma', c.aroma.join(', ') || '—'],
+  ];
+
+  modal.innerHTML = `
+    <button class="modal-close" id="closeBtn">✕</button>
+    <div class="modal-header">
+      <div class="seal">${c.name[0].toUpperCase()}</div>
+      <div>
+        <h2 class="modal-title">${escapeHtml(c.name)}</h2>
+        <p class="modal-sub">${escapeHtml(c.producers || 'Producer unknown')}</p>
+      </div>
+    </div>
+    <a class="modal-link" href="${c.url}" target="_blank" rel="noopener">View on cheese.com ↗</a>
+    <dl class="detail-grid">
+      ${detailRows.map(([k,v])=>`
+        <div class="detail-item"><dt>${k}</dt><dd>${escapeHtml(v)}</dd></div>
+      `).join('')}
+    </dl>
+    ${(c.vegetarian || c.vegan) ? `<div class="modal-tags">
+      ${c.vegetarian ? '<span class="tag">vegetarian</span>' : ''}
+      ${c.vegan ? '<span class="tag">vegan</span>' : ''}
+    </div>` : ''}
+
+    <div class="rating-section">
+      <p class="rating-label">Your rating</p>
+      <div class="dial-row">
+        ${dialSVG(r.rating)}
+        <span class="rating-readout" id="ratingReadout">${r.rating ? `<span class="n">${r.rating}</span> / 5` : 'Not yet rated'}</span>
+      </div>
+      <p class="rating-label">Notes</p>
+      <textarea id="notesInput" placeholder="How was it? Pairs well with…">${escapeHtml(r.notes||'')}</textarea>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="saveBtn">Save</button>
+        ${r.rating || r.notes ? '<button class="btn btn-ghost" id="clearBtn">Clear</button>' : ''}
+        <span class="save-flash" id="saveFlash">Saved ✓</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('closeBtn').onclick = closeModal;
+
+  let pendingRating = r.rating || 0;
+  modal.querySelectorAll('.dial-wedge').forEach(w=>{
+    w.onclick = ()=>{
+      pendingRating = parseInt(w.dataset.n);
+      updateDialDisplay(pendingRating);
+    };
+  });
+
+  document.getElementById('saveBtn').onclick = ()=>{
+    const notes = document.getElementById('notesInput').value.trim();
+    if(pendingRating === 0 && !notes){
+      delete ratings[id];
+    } else {
+      ratings[id] = {
+        rating: pendingRating,
+        notes: notes,
+        ratedAt: new Date().toISOString()
+      };
+    }
+    saveRatings();
+    flashSaved();
+    render();
+  };
+
+  const clearBtn = document.getElementById('clearBtn');
+  if(clearBtn){
+    clearBtn.onclick = ()=>{
+      delete ratings[id];
+      saveRatings();
+      closeModal();
+      render();
+    };
+  }
+}
+
+function updateDialDisplay(n){
+  document.querySelectorAll('.dial-wedge').forEach(w=>{
+    w.classList.toggle('filled', parseInt(w.dataset.n) <= n);
+  });
+  document.getElementById('ratingReadout').innerHTML = n ? `<span class="n">${n}</span> / 5` : 'Not yet rated';
+}
+
+function flashSaved(){
+  const f = document.getElementById('saveFlash');
+  if(!f) return;
+  f.classList.add('show');
+  setTimeout(()=>f.classList.remove('show'), 1400);
+}
+
+function dialSVG(current){
+  // 5 pie wedges around a center circle, clickable
+  const cx=50, cy=50, rOuter=46, rInner=20;
+  let wedges = '';
+  for(let i=0;i<5;i++){
+    const startAngle = -90 + i*72;
+    const endAngle = startAngle + 68;
+    const p1 = polar(cx,cy,rOuter,startAngle);
+    const p2 = polar(cx,cy,rOuter,endAngle);
+    const p3 = polar(cx,cy,rInner,endAngle);
+    const p4 = polar(cx,cy,rInner,startAngle);
+    const n = i+1;
+    const filled = n <= current ? ' filled' : '';
+    wedges += `<path class="dial-wedge${filled}" data-n="${n}"
+      d="M ${p1.x} ${p1.y} A ${rOuter} ${rOuter} 0 0 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${rInner} ${rInner} 0 0 0 ${p4.x} ${p4.y} Z" />`;
+  }
+  return `<svg class="dial" width="100" height="100" viewBox="0 0 100 100">
+    ${wedges}
+    <circle class="dial-center" cx="${cx}" cy="${cy}" r="${rInner-2}" />
+  </svg>`;
+}
+function polar(cx,cy,r,angleDeg){
+  const a = (angleDeg * Math.PI)/180;
+  return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  currentId = null;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ---------- events ----------
+document.getElementById('overlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'overlay') closeModal();
+});
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('milkFilter').addEventListener('change', render);
+document.getElementById('countryFilter').addEventListener('change', render);
+document.getElementById('typeFilter').addEventListener('change', render);
+document.getElementById('ratingFilter').addEventListener('change', render);
+document.getElementById('sortSelect').addEventListener('change', render);
+document.getElementById('bookToggle').addEventListener('click', ()=>{
+  bookMode = !bookMode;
+  document.getElementById('bookToggle').classList.toggle('active', bookMode);
+  render();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') closeModal();
+});
+
+function registerSW(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
