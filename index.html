@@ -328,6 +328,41 @@
     flex-wrap:wrap;
     gap:6px;
   }
+
+  .pairing-section{
+    margin-top:20px;
+    padding-top:20px;
+    border-top:1px solid var(--card-line);
+  }
+  .pairing-note{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:15px;
+    color:var(--stone);
+    margin:0 0 16px;
+    line-height:1.5;
+  }
+  .pairing-cols{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:16px;
+  }
+  .pairing-col dt{
+    font-family:'Inter',sans-serif;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--gold-deep);
+    margin:0 0 6px;
+  }
+  .pairing-col dd{
+    margin:0 0 3px;
+    font-family:'Cormorant Garamond',serif;
+    font-size:15px;
+    color:var(--ink);
+    line-height:1.35;
+  }
   .detail-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -490,6 +525,7 @@
       padding:22px 18px 32px;
     }
     .detail-grid{grid-template-columns:1fr;}
+    .pairing-cols{grid-template-columns:1fr;gap:10px;}
     .modal-title{font-size:23px;}
   }
 
@@ -719,6 +755,7 @@ function openModal(id){
   currentId = id;
   const c = CHEESES.find(x=>x.id===id);
   const r = ratings[id] || {rating:0, notes:''};
+  const pairing = getPairing(c);
   const modal = document.getElementById('modal');
 
   const detailRows = [
@@ -753,6 +790,16 @@ function openModal(id){
       ${c.vegetarian ? '<span class="tag">vegetarian</span>' : ''}
       ${c.vegan ? '<span class="tag">vegan</span>' : ''}
     </div>` : ''}
+
+    <div class="pairing-section">
+      <p class="rating-label">Pairs well with</p>
+      <p class="pairing-note">${escapeHtml(pairing.note)} <em>General guidance based on cheese style, not curated for this specific cheese.</em></p>
+      <div class="pairing-cols">
+        <dl class="pairing-col"><dt>Drink</dt>${pairing.drink.map(x=>`<dd>${escapeHtml(x)}</dd>`).join('')}</dl>
+        <dl class="pairing-col"><dt>Sweet</dt>${pairing.sweet.map(x=>`<dd>${escapeHtml(x)}</dd>`).join('')}</dl>
+        <dl class="pairing-col"><dt>Savory</dt>${pairing.savory.map(x=>`<dd>${escapeHtml(x)}</dd>`).join('')}</dl>
+      </div>
+    </div>
 
     <div class="rating-section">
       <p class="rating-label">Your rating</p>
@@ -864,6 +911,91 @@ function closeModal(){
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ---------- pairing suggestions (style-based, not per-cheese curated data) ----------
+const PAIRING_STYLES = {
+  blue: {
+    note: "Salty and pungent — needs sweetness in the glass and on the plate to balance it.",
+    drink: ['Sweet white wine (Sauternes-style)', 'Sweet red or fortified wine (Port)'],
+    sweet: ['Fig jam', 'Honey'],
+    savory: ['Toasted walnuts', 'Dark rye bread']
+  },
+  washed: {
+    note: "Assertive, aromatic rind — stands up to bold, malty, or spicy pairings.",
+    drink: ['Aromatic white wine', 'Belgian-style ale'],
+    sweet: ['Onion or fig jam'],
+    savory: ['Crusty bread', 'Cured ham']
+  },
+  bloomy: {
+    note: "Creamy and delicate — best matched with something light and acidic rather than heavy.",
+    drink: ['Sparkling wine', 'Crisp, fruity white wine'],
+    sweet: ['Apple or pear preserves'],
+    savory: ['Baguette', 'Toasted almonds']
+  },
+  fresh: {
+    note: "Bright, tangy, and light — wants acidity alongside it rather than tannin or sweetness.",
+    drink: ['Crisp, fruity white wine', 'Dry rosé or sparkling wine'],
+    sweet: ['Citrus marmalade', 'Honey'],
+    savory: ['Olive oil & herbs', 'Crisp crackers']
+  },
+  goatFresh: {
+    note: "Tangy and light with a citrus edge — a sharp, acidic white is the classic match.",
+    drink: ['Sauvignon Blanc-style white wine'],
+    sweet: ['Citrus marmalade', 'Honey'],
+    savory: ['Crackers', 'Fresh herbs']
+  },
+  hard: {
+    note: "Concentrated and often nutty from aging — can carry full-bodied, robust pairings.",
+    drink: ['Full-bodied red wine', 'Rich, oak-aged white wine'],
+    sweet: ['Quince paste (membrillo)', 'Fig jam'],
+    savory: ['Toasted walnuts', 'Cured charcuterie']
+  },
+  semi: {
+    note: "Balanced and mild — flexible with most classic pairings.",
+    drink: ['Medium-bodied red wine', 'Off-dry white wine'],
+    sweet: ['Apricot or peach preserves'],
+    savory: ['Whole-grain mustard', 'Crusty bread']
+  }
+};
+
+function getPairing(c){
+  const type = c.type.map(t=>t.toLowerCase());
+  const rind = (c.rind||'').toLowerCase();
+  const milk = c.milk.map(m=>m.toLowerCase());
+  const flavorAroma = [...c.flavor, ...c.aroma].map(f=>f.toLowerCase());
+
+  let key;
+  if(type.includes('blue-veined')){
+    key = 'blue';
+  } else if(rind === 'washed' || type.includes('smear-ripened')){
+    key = 'washed';
+  } else if(rind === 'bloomy' || type.some(t=>t.includes('soft-ripened'))){
+    key = 'bloomy';
+  } else if(milk.includes('goat') && (type.some(t=>t.includes('fresh')) || type.includes('brined'))){
+    key = 'goatFresh';
+  } else if(type.some(t=>t.includes('fresh')) || type.includes('brined') || type.includes('whey')){
+    key = 'fresh';
+  } else if(type.includes('hard')){
+    key = 'hard';
+  } else {
+    key = 'semi';
+  }
+
+  const base = PAIRING_STYLES[key];
+  const pairing = {
+    note: base.note,
+    drink: [...base.drink],
+    sweet: [...base.sweet],
+    savory: [...base.savory]
+  };
+
+  if(flavorAroma.some(f=>f.includes('smokey') || f.includes('smoky'))){
+    pairing.drink.push('Smoky whisky or bourbon');
+    pairing.sweet.push('Apple butter');
+  }
+
+  return pairing;
 }
 
 // ---------- events ----------
