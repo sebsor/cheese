@@ -357,9 +357,6 @@
     fill:var(--wax);
     stroke:var(--wax-bright);
   }
-  .dial-wedge:hover{
-    fill:var(--wax-bright);
-  }
   .dial-center{
     fill:var(--cave);
     stroke:var(--gold-dim);
@@ -702,12 +699,21 @@ function openModal(id){
   document.getElementById('closeBtn').onclick = closeModal;
 
   let pendingRating = r.rating || 0;
+  const dialEl = modal.querySelector('.dial');
   modal.querySelectorAll('.dial-wedge').forEach(w=>{
     w.onclick = ()=>{
       pendingRating = parseInt(w.dataset.n);
       updateDialDisplay(pendingRating);
     };
+    w.onmouseenter = ()=>{
+      updateDialDisplay(parseInt(w.dataset.n));
+    };
   });
+  if(dialEl){
+    dialEl.onmouseleave = ()=>{
+      updateDialDisplay(pendingRating);
+    };
+  }
 
   document.getElementById('saveBtn').onclick = ()=>{
     const notes = document.getElementById('notesInput').value.trim();
