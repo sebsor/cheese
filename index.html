@@ -92,60 +92,6 @@
     margin-top:22px;
   }
 
-  /* ---------- Band (quick milk filters) ---------- */
-  .band{
-    background:var(--night-2);
-    border-top:1px solid var(--night-line);
-    border-bottom:1px solid var(--night-line);
-    padding:34px 20px;
-    text-align:center;
-  }
-  .band h2.script{
-    font-family:'Pinyon Script',cursive;
-    font-weight:400;
-    font-size:clamp(34px,6vw,46px);
-    color:var(--gold-soft);
-    margin:0 0 4px;
-    line-height:1;
-  }
-  .band-sub{
-    font-family:'Cormorant Garamond',serif;
-    font-style:italic;
-    font-size:15px;
-    color:var(--stone-soft);
-    margin:0 0 22px;
-  }
-  .pill-row{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:10px;
-    max-width:760px;
-    margin:0 auto;
-  }
-  .pill{
-    font-family:'Inter',sans-serif;
-    font-size:12px;
-    font-weight:600;
-    letter-spacing:0.1em;
-    text-transform:uppercase;
-    color:var(--stone-soft);
-    background:transparent;
-    border:1px solid var(--night-line);
-    padding:12px 18px;
-    border-radius:2px;
-    cursor:pointer;
-    transition:all .15s;
-    flex-shrink:0;
-    min-height:44px;
-  }
-  .pill:hover{border-color:var(--gold-deep);color:var(--gold-soft);}
-  .pill.active{
-    background:var(--gold);
-    border-color:var(--gold);
-    color:var(--night);
-  }
-
   /* ---------- Cellar section (cream) ---------- */
   .cellar-section{
     max-width:1100px;
@@ -514,20 +460,7 @@
 
   @media (max-width:640px){
     .hero{padding:36px 16px 26px;}
-    .band{padding:22px 0 24px;}
     .cellar-section{padding:0 14px;}
-
-    /* pills scroll horizontally instead of wrapping to multiple lines */
-    .pill-row{
-      flex-wrap:nowrap;
-      justify-content:flex-start;
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-width:none;
-      padding:0 16px 4px;
-      margin:0 -16px;
-    }
-    .pill-row::-webkit-scrollbar{display:none;}
 
     /* filters as a clean 2-column grid instead of ragged wrapping */
     .filters{
@@ -574,12 +507,6 @@
   <p class="hero-sub">Search, browse, and mark down what's worth aging for.</p>
   <p class="stats-line" id="statsLine">Loading the cellar…</p>
 </header>
-
-<section class="band">
-  <h2 class="script">Browse by Milk</h2>
-  <p class="band-sub">Or use the search and filters below for finer control</p>
-  <div class="pill-row" id="pillRow"></div>
-</section>
 
 <div class="cellar-section">
   <div class="toolbar">
@@ -649,7 +576,6 @@ async function init(){
     return;
   }
   populateFilters();
-  populatePills();
   render();
   registerSW();
 }
@@ -672,34 +598,6 @@ function fillSelect(id, values){
     opt.value = v; opt.textContent = v[0].toUpperCase()+v.slice(1);
     sel.appendChild(opt);
   });
-}
-
-function populatePills(){
-  const counts = {};
-  CHEESES.forEach(c=>c.milk.forEach(m=>counts[m]=(counts[m]||0)+1));
-  const topMilks = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,7).map(x=>x[0]);
-  const row = document.getElementById('pillRow');
-  row.innerHTML = '';
-
-  const allPill = document.createElement('button');
-  allPill.className = 'pill active';
-  allPill.textContent = 'All';
-  allPill.onclick = ()=>selectPill(allPill, '');
-  row.appendChild(allPill);
-
-  topMilks.forEach(m=>{
-    const p = document.createElement('button');
-    p.className = 'pill';
-    p.textContent = m[0].toUpperCase()+m.slice(1);
-    p.onclick = ()=>selectPill(p, m);
-    row.appendChild(p);
-  });
-}
-function selectPill(el, milkValue){
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('milkFilter').value = milkValue;
-  render();
 }
 
 // ---------- filtering / sorting ----------
@@ -973,10 +871,7 @@ document.getElementById('overlay').addEventListener('click', (e)=>{
   if(e.target.id === 'overlay') closeModal();
 });
 document.getElementById('searchInput').addEventListener('input', render);
-document.getElementById('milkFilter').addEventListener('change', ()=>{
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
-  render();
-});
+document.getElementById('milkFilter').addEventListener('change', render);
 document.getElementById('countryFilter').addEventListener('change', render);
 document.getElementById('typeFilter').addEventListener('change', render);
 document.getElementById('ratingFilter').addEventListener('change', render);
